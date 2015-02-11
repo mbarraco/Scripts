@@ -11,28 +11,15 @@ from time import time
 baseUrl = 'http://letras.com'
 
 def getArtistsLink():
-    url = baseUrl + '/top-artistas/'
-    data = urllib.request.urlopen(url).read()
-    tree = html.fromstring(data)
-    artistasLinks = tree.xpath('//div[@class="cnt_listas g-960"]//a/@href')
-    outputFile = 'artistas.dat'
-    f = open(outputFile,'w')
-    for line in artistasLinks:
-        print(line, file = f)
-    f.close() 
+    saveToFile('artistas.dat', getHtml(baseUrl + '/top-artistas/', '//div[@class="cnt_listas g-960"]//a/@href' ))
 
 def getArtistLetrasLink():
     directory = createDirectory('artistas')
     artistasLinks = openAndRead('artistas.dat')
     for artistLink in artistasLinks:
-        url = baseUrl + artistLink;
-        data = urllib.request.urlopen(url).read().decode('UTF8')
-        tree = html.fromstring(data)
-        letrasLinks = tree.xpath('//div[@class="cnt_listas"]//a/@href')
         filename = artistLink.replace('/', '')
         filename = filename[:-1]
-        artistFile = directory + filename + '.dat'
-        saveToFile(artistFile, letrasLinks)
+        saveToFile(directory + filename + '.dat', getHtml(baseUrl + artistLink, '//div[@class="cnt_listas"]//a/@href'))
 
 def getArtistsLetras():
     rootLetras = createDirectory('letras')
@@ -44,19 +31,14 @@ def getArtistsLetras():
             directory = createDirectory(rootLetras + fileName[:-4])
             i = 0;
             for link in letrasLinks:
-                url = baseUrl + link;
-                data = urllib.request.urlopen(url).read().decode('UTF8')
-                tree = html.fromstring(data)
-                letra = tree.xpath('//div[@id="div_letra"]//text()')
-                
-                letraName = str(i)
-                letraFile = directory + letraName + '.txt'
-                saveToFile(letraFile, letra)
+                saveToFile(directory + str(i) + '.txt', getHtml(baseUrl + link, '//div[@id="div_letra"]//text()'))
                 i += 1
             os.rename('artistas/' + fileName, rootDownloaded + fileName)
             print(" ---- >he bajado las letras en : " + str(time() - t0) + " seg.")
 
-
+def getHtml(url, xpathSelector):
+    tree = html.fromstring(urllib.request.urlopen(url).read())
+    return tree.xpath(xpathSelector)
 
 
 def createDirectory(name):
